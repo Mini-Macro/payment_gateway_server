@@ -83,7 +83,7 @@ app.post("/order", async (req, res) => {
       .slice(2)}`;
     const callbackUrl = `${
       process.env.BASE_URL || "http://localhost:8000"
-    }/status//${merchantTransactionId}`;
+    }/status`;
 
     const data = {
       merchantId: merchant_id,
@@ -124,6 +124,7 @@ app.post("/order", async (req, res) => {
     console.log("Sending request to PhonePe:", options.url);
     const response = await axios(options);
     console.log("PhonePe Response:", response.data);
+    console.log("redirectUrl:", response.data.redirectUrl);
     return res.json(response.data);
   } catch (error) {
     console.error("Error in /order:", error.response?.data || error.message);
@@ -139,7 +140,7 @@ app.post("/order", async (req, res) => {
 });
 
 // Status check endpoint
-app.post("/status/:id", async (req, res) => {
+app.post("/status", async (req, res) => {
   try {
     const merchantTransactionId = req.query.id || req.body.transactionId;
     console.log("Checking status for transaction:", merchantTransactionId);
