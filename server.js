@@ -11,12 +11,23 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "*",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     methods: ["GET", "POST"],
+    credentials: true,
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+    ],
   })
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Add OPTIONS handling for preflight requests
+app.options("*", cors());
 
 // Environment variables
 const salt_key = process.env.PHONEPE_SALT_KEY;
@@ -31,6 +42,15 @@ const phonepe_base_url = is_production
 // Health check endpoint (required by Render)
 app.get("/health", (req, res) => {
   res.json({ status: "healthy" });
+});
+
+// Add this near your other endpoints
+app.get("/test", (req, res) => {
+  res.json({
+    message: "Server is running",
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Order creation endpoint
