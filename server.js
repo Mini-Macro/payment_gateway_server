@@ -56,7 +56,7 @@ app.get("/health", (req, res) => {
   res.json({ status: "healthy" });
 });
 
-// Add this near your other endpoints
+// Test endpoint to check if the server is running
 app.get("/test", (req, res) => {
   res.json({
     message: "Server is running",
@@ -79,6 +79,7 @@ app.post("/order", async (req, res) => {
       });
     }
 
+    // Generate a unique transaction ID
     const merchantTransactionId = `MT${Date.now()}${crypto
       .randomBytes(4)
       .toString("hex")}`;
@@ -120,7 +121,6 @@ app.post("/order", async (req, res) => {
         accept: "application/json",
         "Content-Type": "application/json",
         "X-VERIFY": checksum,
-        "X-MERCHANT-ID": merchant_id,
       },
       data: {
         request: payloadMain,
@@ -170,7 +170,7 @@ app.post("/status/:id", async (req, res) => {
         accept: "application/json",
         "Content-Type": "application/json",
         "X-VERIFY": checksum,
-        "X-MERCHANT-ID": merchant_id,
+        "X-MERCHANT-ID": `${merchant_id}`,
       },
     };
 
