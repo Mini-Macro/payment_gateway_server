@@ -124,7 +124,10 @@ app.post("/order", async (req, res) => {
     console.log("Sending request to PhonePe:", options.url);
     const response = await axios(options);
     console.log("PhonePe Response:", response.data);
-    console.log("redirectUrl:", response.data.redirectUrl);
+    console.log(
+      "redirectUrl:",
+      response.data.data.instrumentResponse.redirectInfo.url
+    );
     return res.json(response.data);
   } catch (error) {
     console.error("Error in /order:", error.response?.data || error.message);
