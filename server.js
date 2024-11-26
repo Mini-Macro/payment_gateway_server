@@ -8,26 +8,37 @@ require("dotenv").config();
 const app = express();
 
 // Basic security
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          "https://api-preprod.phonepe.com",
+          "https://mercury-t2.phonepe.com",
+        ],
+        frameSrc: ["'self'", "https://mercury-t2.phonepe.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://mercury-t2.phonepe.com",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+      },
+    },
+  })
+);
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true,
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept",
-      "Origin",
-    ],
   })
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Add OPTIONS handling for preflight requests
-app.options("*", cors());
 
 // Environment variables
 const salt_key = process.env.PHONEPE_SALT_KEY;
@@ -56,21 +67,36 @@ app.get("/test", (req, res) => {
 // Order creation endpoint
 app.post("/order", async (req, res) => {
   try {
-    const merchantTransactionId = `MT${Date.now()}`; // Generate a unique transaction ID
+    console.log("Received order request:", req.body);
+
+    const { name, amount, number } = req.body;
+
+    if (!name || !amount || !number) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
+
+    const merchantTransactionId = `MT${Date.now()}${Math.random()
+      .toString(36)
+      .slice(2)}`;
+    const callbackUrl = `${
+      process.env.BASE_URL || "http://localhost:8000"
+    }/status`;
 
     const data = {
       merchantId: merchant_id,
       merchantTransactionId: merchantTransactionId,
-      name: req.body.name,
-      amount: req.body.amount * 100,
-      redirectUrl: `${
-        process.env.BASE_URL || "http://localhost:8000"
-      }/status?id=${merchantTransactionId}`,
+      name: name,
+      amount: amount * 100,
+      redirectUrl: callbackUrl,
       redirectMode: "POST",
-      mobileNumber: req.body.number,
+      mobileNumber: number,
       paymentInstrument: {
         type: "PAY_PAGE",
       },
+      callbackUrl: callbackUrl,
     };
 
     console.log("Payment Request Data:", data);
@@ -95,6 +121,7 @@ app.post("/order", async (req, res) => {
       },
     };
 
+    console.log("Sending request to PhonePe:", options.url);
     const response = await axios(options);
     console.log("PhonePe Response:", response.data);
     return res.json(response.data);
@@ -106,7 +133,7 @@ app.post("/order", async (req, res) => {
       error:
         process.env.NODE_ENV === "production"
           ? "Internal server error"
-          : error.message,
+          : error.response?.data || error.message,
     });
   }
 });
@@ -114,8 +141,9 @@ app.post("/order", async (req, res) => {
 // Status check endpoint
 app.post("/status", async (req, res) => {
   try {
-    const merchantTransactionId = req.query.id;
+    const merchantTransactionId = req.query.id || req.body.transactionId;
     console.log("Checking status for transaction:", merchantTransactionId);
+    console.log("Status request body:", req.body);
 
     const keyIndex = 1;
     const string =
