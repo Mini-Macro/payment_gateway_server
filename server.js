@@ -17,14 +17,11 @@ app.use(
           "'self'",
           "https://api-preprod.phonepe.com",
           "https://mercury-t2.phonepe.com",
+          "https://mercury.phonepe.com",
         ],
-        frameSrc: ["'self'", "https://mercury-t2.phonepe.com"],
+        frameSrc: ["'self'", "https://mercury.phonepe.com"],
         imgSrc: ["'self'", "data:", "https:"],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "https://mercury-t2.phonepe.com",
-        ],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://mercury.phonepe.com"],
         styleSrc: ["'self'", "'unsafe-inline'"],
       },
     },
@@ -78,16 +75,20 @@ app.post("/order", async (req, res) => {
       });
     }
 
-    const merchantTransactionId = `MT${Date.now()}${Math.random()
-      .toString(36)
-      .slice(2)}`;
-    const callbackUrl = `${
-      process.env.BASE_URL || "http://localhost:8000"
-    }/status/${merchantTransactionId}`;
+    const merchantTransactionId = `MT${Date.now()}${crypto
+      .randomBytes(4)
+      .toString("hex")}`;
+
+    // Ensure callback URL is absolute and uses HTTPS
+    const callbackUrl = new URL(
+      `/status/${merchantTransactionId}`,
+      process.env.BASE_URL || "https://phonepe-payment-server.onrender.com"
+    ).toString();
 
     const data = {
       merchantId: merchant_id,
       merchantTransactionId: merchantTransactionId,
+      merchantUserId: `MUID${Date.now()}`,
       name: name,
       amount: amount * 100,
       redirectUrl: callbackUrl,
@@ -115,6 +116,7 @@ app.post("/order", async (req, res) => {
         accept: "application/json",
         "Content-Type": "application/json",
         "X-VERIFY": checksum,
+        "X-MERCHANT-ID": merchant_id,
       },
       data: {
         request: payloadMain,
@@ -183,7 +185,7 @@ app.post("/status/:id", async (req, res) => {
     }
   } catch (error) {
     console.error("Error in /status:", error.response?.data || error.message);
-    res.redirect(
+    return res.redirect(
       process.env.FRONTEND_FAILURE_URL || "http://localhost:5173/failure"
     );
   }
