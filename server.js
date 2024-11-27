@@ -8,32 +8,30 @@ require("dotenv").config();
 const app = express();
 
 // Basic security
-// app.use(
-//   helmet(
-//     {
-//     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-//     contentSecurityPolicy: {
-//       directives: {
-//         defaultSrc: ["'self'"],
-//         connectSrc: [
-//           "'self'",
-//           "https://api-preprod.phonepe.com",
-//           "https://mercury-t2.phonepe.com",
-//           "https://mercury.phonepe.com",
-//         ],
-//         frameSrc: ["'self'", "https://mercury-t2.phonepe.com"],
-//         imgSrc: ["'self'", "data:", "https:"],
-//         scriptSrc: [
-//           "'self'",
-//           "'unsafe-inline'",
-//           "https://mercury-t2.phonepe.com",
-//         ],
-//         styleSrc: ["'self'", "'unsafe-inline'"],
-//       },
-//     },
-//   }
-// )
-// );
+app.use(
+  helmet({
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          "https://api-preprod.phonepe.com",
+          "https://mercury-t2.phonepe.com",
+          "https://mercury.phonepe.com",
+        ],
+        frameSrc: ["'self'", "https://mercury-t2.phonepe.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://mercury-t2.phonepe.com",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+      },
+    },
+  })
+);
 
 app.use(
   cors({
