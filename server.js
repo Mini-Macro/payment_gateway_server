@@ -10,7 +10,7 @@ const app = express();
 // Basic security
 app.use(
   helmet({
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    referrerPolicy: { policy: "no-referrer" },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
